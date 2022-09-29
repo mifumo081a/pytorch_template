@@ -3,11 +3,12 @@ from sklearn.model_selection import train_test_split, GroupShuffleSplit, KFold, 
 from torch.utils.data import Dataset, Subset, DataLoader
 from ..pickle_io import *
 import os
-from pytorch_template.utils import *
+from pytorch_template.utils import get_dataloaders
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 from glob import glob
+import copy
 
 
 def kfold_split(dataset: Dataset, test_dataset: Optional[Dataset]=None, transforms: Optional[Dict]=None, n_splits=5, train_size=0.7,
@@ -22,22 +23,21 @@ def kfold_split(dataset: Dataset, test_dataset: Optional[Dataset]=None, transfor
 
     if test_dataset is  None:
         if len(groups) > 0:
-            kf = GroupKFold(n_splits=n_splits, shuffle=shuffle, random_state=random_state)
+            kf = GroupKFold(n_splits=n_splits)
             for i, (trainval_idx, test_idx) in enumerate(kf.split(range(len(dataset)), groups=groups)):
                 trainval_groups = groups[trainval_idx]
-                gss = GroupShuffleSplit(n_splits=1, train_size=train_size,
-                                        shuffle=shuffle, random_state=random_state)
+                gss = GroupShuffleSplit(n_splits=1, train_size=train_size)
                 train_idx, val_idx = next(gss.split(trainval_idx, groups=trainval_groups))
 
                 print(f"Train: {len(train_idx)}, Val: {len(val_idx)}, Test: {len(test_idx)}")
-                train_dataset = Subset(dataset, train_idx)
-                val_dataset = Subset(dataset, val_idx)
-                test_dataset = Subset(dataset, test_idx)
+                train_dataset = Subset(copy.deepcopy(dataset), train_idx)
+                val_dataset = Subset(copy.deepcopy(dataset), val_idx)
+                test_dataset = Subset(copy.deepcopy(dataset), test_idx)
                 
                 if transforms is not None:
                     train_dataset.dataset.transform = transforms["train"]
                     val_dataset.dataset.transform = transforms["val"]
-                    test_dataset.dataset.transform = transforms["test"]
+                    test_dataset.dataset.transform = transforms["test"]               
                 
                 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
                 val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
@@ -58,9 +58,9 @@ def kfold_split(dataset: Dataset, test_dataset: Optional[Dataset]=None, transfor
                                                     shuffle=shuffle, random_state=random_state)
 
                 print(f"Train: {len(train_idx)}, Val: {len(val_idx)}, Test: {len(test_idx)}")
-                train_dataset = Subset(dataset, train_idx)
-                val_dataset = Subset(dataset, val_idx)
-                test_dataset = Subset(dataset, test_idx)
+                train_dataset = Subset(copy.deepcopy(dataset), train_idx)
+                val_dataset = Subset(copy.deepcopy(dataset), val_idx)
+                test_dataset = Subset(copy.deepcopy(dataset), test_idx)
                 
                 if transforms is not None:
                     train_dataset.dataset.transform = transforms["train"]
@@ -90,8 +90,8 @@ def kfold_split(dataset: Dataset, test_dataset: Optional[Dataset]=None, transfor
             kf = GroupKFold(n_splits=n_splits, shuffle=shuffle, random_state=random_state)
             for i, (train_idx, val_idx) in enumerate(kf.split(range(len(dataset)), groups=groups)):
                 print(f"Train: {len(train_idx)}, Val: {len(val_idx)}")
-                train_dataset = Subset(dataset, train_idx)
-                val_dataset = Subset(dataset, val_idx)
+                train_dataset = Subset(copy.deepcopy(dataset), train_idx)
+                val_dataset = Subset(copy.deepcopy(dataset), val_idx)
                 
                 if transforms is not None:
                     train_dataset.dataset.transform = transforms["train"]
@@ -109,8 +109,8 @@ def kfold_split(dataset: Dataset, test_dataset: Optional[Dataset]=None, transfor
             kf = KFold(n_splits=n_splits, shuffle=shuffle, random_state=random_state)
             for i, (train_idx, val_idx) in enumerate(kf.split(range(len(dataset)))):
                 print(f"Train: {len(train_idx)}, Val: {len(val_idx)}")
-                train_dataset = Subset(dataset, train_idx)
-                val_dataset = Subset(dataset, val_idx)
+                train_dataset = Subset(copy.deepcopy(dataset), train_idx)
+                val_dataset = Subset(copy.deepcopy(dataset), val_idx)
                 
                 if transforms is not None:
                     train_dataset.dataset.transform = transforms["train"]
