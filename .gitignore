@@ -3,7 +3,3 @@
 .DS_Store
 __pycache__/
 
-data/
-kfold_pickle/
-logs/
-models/
