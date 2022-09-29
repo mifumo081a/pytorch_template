@@ -13,11 +13,11 @@ from glob import glob
 def kfold_split(dataset: Dataset, test_dataset: Optional[Dataset]=None, transforms: Optional[Dict]=None, n_splits=5, train_size=0.7,
                 root: str=os.getcwd(), groups:list=[],
                 num_workers=2, batch_size=8,
-                shuffle=False, random_state=None):
+                shuffle=False, random_state=None, folder_name="kfold_pickle"):
     """
     transforms = {"train": , "val": , "test": }
     """
-    kfold_root = os.path.join(root, "kfold_pickle")
+    kfold_root = os.path.join(root, folder_name)
     os.makedirs(kfold_root, exist_ok=True)
 
     if test_dataset is  None:
