@@ -1,14 +1,16 @@
+import os
 import torch
 import torch.nn as nn
 from torch.optim import Optimizer, SGD
 from torch.utils.data import DataLoader
 import copy
 from tqdm import tqdm
-from typing import Dict, Tuple, Union, Optional, OrderedDict
+from typing import Dict, Tuple, Union, Optional, OrderedDict, Callable
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import r2_score
-from ..utils import *
+from ..utils import get_optimizer
+from ..pickle_io import save_as_pickle
 
 
 class BaseTrainer:

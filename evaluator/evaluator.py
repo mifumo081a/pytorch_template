@@ -1,13 +1,15 @@
+import os
 import torch
-from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
-from ..base import BaseEvaluator
-from ..utils import *
+import torch.nn as nn
+from torch.utils.data import DataLoader
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import torch.nn as nn
-from typing import Dict
-from torch.utils.data import DataLoader
+from typing import Dict, Callable
 from matplotlib.colors import TwoSlopeNorm as tsn
+from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
+from ..base import BaseEvaluator
+from ..utils import toColorImg
 
 
 class ImageClassifier_Evaluator(BaseEvaluator):
@@ -31,7 +33,7 @@ class ImageClassifier_Evaluator(BaseEvaluator):
         x, y = x.to(self.device), y.to(self.device)
         
         with torch.no_grad():
-            outputs, _ = self.model_ft(x)
+            outputs, *_ = self.model_ft(x)
             _, preds = torch.max(outputs, 1)
             
         return x, (y, preds)
@@ -42,6 +44,10 @@ class ImageClassifier_Evaluator(BaseEvaluator):
             save_root = os.path.join(self.logs_root, folder_name)
             os.makedirs(save_root, exist_ok=True)
             os.makedirs(os.path.join(save_root, "reports/"), exist_ok=True)
+        else:
+            save_root = self.logs_root
+            os.makedirs(os.path.join(save_root, "reports/"), exist_ok=True)
+
         labels = self.testloaders["test"].dataset.labels
         
         _, (targets, preds) = self.test(all=True)
@@ -107,6 +113,9 @@ class ImageClassifier_Evaluator(BaseEvaluator):
         if len(folder_name):
             save_root = os.path.join(self.logs_root, folder_name)
             os.makedirs(save_root, exist_ok=True)
+        else:
+            save_root = self.logs_root
+
         labels = self.testloaders["test"].dataset.labels
         acc_format = f"Accuracy: {self.acc:.4f}"
         fscore_format = "F scores: "
@@ -134,6 +143,8 @@ class ImageClassifier_Evaluator(BaseEvaluator):
         if len(folder_name):
             save_root = os.path.join(self.logs_root, folder_name)
             os.makedirs(save_root, exist_ok=True)
+        else:
+            save_root = self.logs_root
         
         is_random = ["test", "randomtest"][int(random)]
         labels = self.testloaders["test"].dataset.labels
@@ -212,6 +223,8 @@ class ABN_Evaluator(ImageClassifier_Evaluator):
         if len(folder_name):
             save_root = os.path.join(self.logs_root, folder_name)
             os.makedirs(save_root, exist_ok=True)
+        else:
+            save_root = self.logs_root
         
         is_random = ["test", "randomtest"][int(random)]
         labels = self.testloaders["test"].dataset.labels
@@ -267,6 +280,8 @@ class ABN_Evaluator(ImageClassifier_Evaluator):
         if len(folder_name):
             save_root = os.path.join(self.logs_root, folder_name)
             os.makedirs(save_root, exist_ok=True)
+        else:
+            save_root = self.logs_root
         
         is_random = ["test", "randomtest"][int(random)]
         labels = self.testloaders["test"].dataset.labels
@@ -327,6 +342,8 @@ class LSUnet_Evaluator(BaseEvaluator):
         if len(folder_name):
             save_root = os.path.join(self.logs_root, folder_name)
             os.makedirs(save_root, exist_ok=True)
+        else:
+            save_root = self.logs_root
         
         is_random = ["test", "randomtest"][int(random)]
         labels = self.testloaders["test"].dataset.labels

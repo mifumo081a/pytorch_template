@@ -27,14 +27,14 @@ class Trainer_Classifier(BaseTrainer):
 
         if self.model_ft.training:
           self.optimizer.zero_grad()
-          outputs, _ = self.model_ft(x)
+          outputs, *_ = self.model_ft(x)
           loss = loss_func(outputs, labels)
           _, predictions = torch.max(outputs, 1)
           loss.backward()
           self.optimizer.step()
         else:
           with torch.no_grad():
-            outputs, _ = self.model_ft(x)
+            outputs, *_ = self.model_ft(x)
             loss = loss_func(outputs, labels)
             _, predictions = torch.max(outputs, 1)
         

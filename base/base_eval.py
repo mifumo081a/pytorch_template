@@ -1,5 +1,5 @@
 import os
-from ..utils import *
+import torch
 from typing import Union, Tuple, Callable
 from torch.utils.data import DataLoader
 import torch.nn as nn
@@ -44,10 +44,10 @@ class BaseEvaluator:
                 inputs, (targets, preds) = self.forward(data)
                 
                 if targets.shape:
-                    targets_list.extend(targets.detach().clone())
-                    preds_list.extend(preds.detach().clone())
+                    targets_list.extend(targets)
+                    preds_list.extend(preds)
                 
-                inputs_list.extend(inputs.detach().clone())
+                inputs_list.extend(inputs)
             
             return torch.stack(inputs_list).cpu(), (torch.stack(targets_list).cpu(),
                                                     torch.stack(preds_list).cpu())

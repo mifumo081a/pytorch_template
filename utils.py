@@ -1,9 +1,9 @@
-from .pickle_io import *
+import os
+from .pickle_io import save_as_pickle, read_as_pickle
 from torch.optim import SGD, Optimizer
 from typing import Callable
 import torch
 import torch.nn as nn
-import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import cm as cmap
 from matplotlib.colors import TwoSlopeNorm as tsn
