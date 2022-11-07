@@ -10,8 +10,9 @@ from matplotlib.colors import TwoSlopeNorm as tsn
 
 
 # x[H,W]
-def toColorImg(x, cm="bwr"):
-    norm = tsn(vmin=np.minimum(x[:].min(),-1e-6), vcenter=0, vmax=np.maximum(x[:].max(),1e-6)) # maps[channels]
+def toColorImg(x, cm="bwr", norm=None):
+    if norm is not None:
+        norm = tsn(vmin=np.minimum(x[:].min(),-1e-6), vcenter=0, vmax=np.maximum(x[:].max(),1e-6)) # maps[channels]
     sm = cmap.ScalarMappable(norm=norm, cmap=cm)
     return sm.to_rgba(x)[:,:,:3]
 

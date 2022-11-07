@@ -95,7 +95,7 @@ class ImageClassifier_Evaluator(BaseEvaluator):
         
     #         with torch.no_grad():
     #             outputs, *_ = self.model_ft(x)
-    #             probabilities = nn.functional.softmax(outputs.squeeze(), dim=0)
+    #             probabilities = torch.nn.functional.softmax(outputs.squeeze(), dim=0)
 
     #             top_prob, top_catid = torch.topk(probabilities, len(labels))
                 
@@ -154,7 +154,7 @@ class ImageClassifier_Evaluator(BaseEvaluator):
         with torch.no_grad():
             outputs, fmaps = self.model_ft(imgs)
         # The output has unnormalized scores. To get probabilities, you can run a softmax on it.
-        probabilities = nn.functional.softmax(outputs.squeeze(), dim=0)
+        probabilities = torch.nn.functional.softmax(outputs.squeeze(), dim=0)
 
         # Show the classification result
         top_prob, top_catid = torch.topk(probabilities, len(labels))
@@ -164,8 +164,8 @@ class ImageClassifier_Evaluator(BaseEvaluator):
             
         weight = self.model_ft.classifier[0].weight
             
-        class_activation_mapper = nn.Conv2d(weight.shape[1], weight.shape[0], 1, padding=0, bias=False)
-        class_activation_mapper.weight = nn.Parameter(weight.unsqueeze(-1).unsqueeze(-1))
+        class_activation_mapper = torch.nn.Conv2d(weight.shape[1], weight.shape[0], 1, padding=0, bias=False)
+        class_activation_mapper.weight = torch.nn.Parameter(weight.unsqueeze(-1).unsqueeze(-1))
         upsample = nn.Upsample(tuple(imgs.shape[-2:]), mode="bilinear")
             
         with torch.no_grad():
@@ -234,7 +234,7 @@ class ABN_Evaluator(ImageClassifier_Evaluator):
         with torch.no_grad():
             outputs, att_out, fmaps, attention_map = self.model_ft(imgs)
         # The output has unnormalized scores. To get probabilities, you can run a softmax on it.
-        probabilities = nn.functional.softmax(outputs.squeeze(), dim=0)
+        probabilities = torch.nn.functional.softmax(outputs.squeeze(), dim=0)
 
         # Show the classification result
         top_prob, top_catid = torch.topk(probabilities, len(labels))
@@ -244,8 +244,8 @@ class ABN_Evaluator(ImageClassifier_Evaluator):
             
         weight = self.model_ft.classifier[0].weight
             
-        class_activation_mapper = nn.Conv2d(weight.shape[1], weight.shape[0], 1, padding=0, bias=False)
-        class_activation_mapper.weight = nn.Parameter(weight.unsqueeze(-1).unsqueeze(-1))
+        class_activation_mapper = torch.nn.Conv2d(weight.shape[1], weight.shape[0], 1, padding=0, bias=False)
+        class_activation_mapper.weight = torch.nn.Parameter(weight.unsqueeze(-1).unsqueeze(-1))
         upsample = nn.Upsample(tuple(imgs.shape[-2:]), mode="bilinear")
             
         with torch.no_grad():
@@ -291,7 +291,7 @@ class ABN_Evaluator(ImageClassifier_Evaluator):
         with torch.no_grad():
             outputs, att_out, fmaps, attention_map = self.model_ft(imgs)
         # The output has unnormalized scores. To get probabilities, you can run a softmax on it.
-        probabilities = nn.functional.softmax(outputs.squeeze(), dim=0)
+        probabilities = torch.nn.functional.softmax(outputs.squeeze(), dim=0)
 
         # Show the classification result
         top_prob, top_catid = torch.topk(probabilities, len(labels))
