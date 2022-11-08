@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from typing import Dict, Callable
+from typing import Dict, Callable, Tuple
 from matplotlib.colors import TwoSlopeNorm as tsn
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
 from ..base import BaseEvaluator
@@ -36,7 +36,7 @@ class ImageClassifier_Evaluator(BaseEvaluator):
             outputs, *_ = self.model_ft(x)
             _, preds = torch.max(outputs, 1)
             
-        return x, (y, preds)
+        return (y, preds)
     
     
     def confusion_matrix(self, folder_name:str="", fname="eval", save=False):
@@ -50,7 +50,7 @@ class ImageClassifier_Evaluator(BaseEvaluator):
 
         labels = self.testloaders["test"].dataset.labels
         
-        _, (targets, preds) = self.test(all=True)
+        (targets, preds) = self.test(all=True)
         
         self.acc = accuracy_score(targets, preds)
         c_rep = classification_report(targets, preds, 
@@ -137,9 +137,49 @@ class ImageClassifier_Evaluator(BaseEvaluator):
             print(fscore_format)
             print(recall_format)
             print(precision_format)
+    
+    
+    def plot_cam(self, data: Tuple[torch.Tensor, ...],
+                 alpha:float=0.5, cm:str="bwr_r")->plt.Figure:
+        labels = self.testloaders["test"].dataset.labels
+        imgs, targets = data
+        
+        with torch.no_grad():
+            outputs = self.model_ft(imgs)
             
+        probabilities = torch.nn.functional.softmax(outputs.squeeze(), dim=0)
+
+        # Show the classification result
+        top_prob, top_catid = torch.topk(probabilities, len(labels))
+        print("Classified as \033[1m", labels[top_catid[0]], "\033[0m, model output =", outputs.squeeze())
+        for i in range(top_prob.size(0)):
+            print(labels[top_catid[i]], "(", top_catid[i].cpu().numpy(), ")", "{:.2f} %".format(top_prob[i].item()*100))
+        
+        upsample = nn.Upsample(tuple(imgs.shape[-2:]), mode="bilinear")
+        
+        cam = self.model_ft.get_cam(imgs)
+        cam = upsample(cam)
+        cam = cam.detach().squeeze().cpu().numpy()
+        ccam = toColorImg(cam[top_catid[0]], cm=cm)
+        
+        if imgs.shape[1] != 3:
+            imgs = imgs.repeat(1, 3, 1, 1)
+        imgs = imgs.detach().squeeze().cpu().permute(1, 2, 0).numpy()
+        
+        cam_image = imgs * alpha + ccam * (1-alpha)
+        
+        fig, ax = plt.subplots(1, 2, figsize=(10, 5), tight_layout=True)
+        fig.suptitle(f"Target: {labels[targets.item()]}, Prediction: {labels[top_catid[0]]}")        
+        ax[0].imshow(imgs[0], vmin=0, vmax=1)
+        ax[0].axis("off")
+        ax[1].imshow(cam_image, vmin=0, vmax=1)
+        ax[1].axis("off")
+        
+        return fig
+
             
-    def show_cam(self, folder_name:str="", fname="cam", random=True, save=False):
+    def show_cam(self, folder_name:str="", fname="cam", random=True, save=False,
+                 alpha:float=0.5, cm: float="bwr_r"):
         if len(folder_name):
             save_root = os.path.join(self.logs_root, folder_name)
             os.makedirs(save_root, exist_ok=True)
@@ -149,52 +189,14 @@ class ImageClassifier_Evaluator(BaseEvaluator):
         is_random = ["test", "randomtest"][int(random)]
         labels = self.testloaders["test"].dataset.labels
         
-        imgs, targets = next(iter(self.testloaders[is_random]))
-        imgs = imgs.to(self.device)
-        with torch.no_grad():
-            outputs, fmaps = self.model_ft(imgs)
-        # The output has unnormalized scores. To get probabilities, you can run a softmax on it.
-        probabilities = torch.nn.functional.softmax(outputs.squeeze(), dim=0)
-
-        # Show the classification result
-        top_prob, top_catid = torch.topk(probabilities, len(labels))
-        print("Classified as \033[1m", labels[top_catid[0]], "\033[0m, model output =", outputs.squeeze())
-        for i in range(top_prob.size(0)):
-            print(labels[top_catid[i]], "(", top_catid[i].cpu().numpy(), ")", "{:.2f} %".format(top_prob[i].item()*100))
-            
-        weight = self.model_ft.classifier[0].weight
-            
-        class_activation_mapper = torch.nn.Conv2d(weight.shape[1], weight.shape[0], 1, padding=0, bias=False)
-        class_activation_mapper.weight = torch.nn.Parameter(weight.unsqueeze(-1).unsqueeze(-1))
-        upsample = nn.Upsample(tuple(imgs.shape[-2:]), mode="bilinear")
-            
-        with torch.no_grad():
-            cam = class_activation_mapper(fmaps)
-            cam_avgs = cam.mean([-2,-1]).cpu().numpy().tolist()
-        
-        if imgs.shape[1] != 3:
-            imgs = imgs.repeat(1, 3, 1, 1)
-        in_img = imgs.squeeze().cpu().permute(1, 2, 0).numpy()
-        cam = upsample(cam).squeeze().cpu().numpy()
-        ccam = toColorImg(cam[top_catid[0]], cm='bwr')#.transpose(2,0,1)
-        
-        # overlay cam on input
-        alpha = 0.25
-        cam_image = in_img*alpha + ccam*(1-alpha)
-        # print(cam_image.min(), cam_image.max())
-        
-        fig, ax = plt.subplots(2, 1, figsize=(30, 5))
-        fig.suptitle(f"Target: {labels[targets.item()]}, Prediction: {labels[top_catid[0]]}")
-        # ax[0].imshow(in_img, vmin=0, vmax=1)
-        ax[0].imshow(in_img)
-        ax[1].imshow(cam_image, vmin=0, vmax=1)
+        data = next(iter(self.testloaders[is_random]))
+        f = self.plot_cam(data, alpha, cm)
         if save:
-            plt.savefig(os.path.join(save_root, fname+".png"))
-            plt.savefig(os.path.join(save_root, fname+".pdf"))
+            plt.savefig(os.path.join(save_root, fname+".png"), bbox_inches="tight", pad_inches=0.5)
+            plt.savefig(os.path.join(save_root, fname+".pdf"), bbox_inches="tight", pad_inches=0.5)
         else:
             plt.show()
-        plt.close()
-        
+        plt.close()       
 
         
 class ABN_Evaluator(ImageClassifier_Evaluator):

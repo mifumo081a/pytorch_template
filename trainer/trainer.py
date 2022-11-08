@@ -1,12 +1,10 @@
-import os
 import numpy as np
 import torch
 from torch import nn
-from torch.optim import Optimizer, Adam, SGD
+from torch.optim import Optimizer, Adam
 from torch.utils.data import DataLoader
 from typing import Callable, Dict, Optional, Tuple, Union
 from ..base import BaseTrainer
-from ..pickle_io import *
 from sklearn.metrics import accuracy_score
 
 
@@ -18,23 +16,24 @@ class Trainer_Classifier(BaseTrainer):
         super().__init__(model=model, device=device,
                          dataloaders=dataloaders,
                          optim_init=optim_init, lr=lr, epochs=epochs)
+        self.criterion = nn.CrossEntropyLoss()
         
 
     def step_func(self, data):
-        loss_func = nn.CrossEntropyLoss()
+        loss_func = self.criterion
         x, labels = data
         x, labels = x.to(self.device), labels.to(self.device)
 
         if self.model_ft.training:
           self.optimizer.zero_grad()
-          outputs, *_ = self.model_ft(x)
+          outputs = self.model_ft(x)
           loss = loss_func(outputs, labels)
           _, predictions = torch.max(outputs, 1)
           loss.backward()
           self.optimizer.step()
         else:
           with torch.no_grad():
-            outputs, *_ = self.model_ft(x)
+            outputs = self.model_ft(x)
             loss = loss_func(outputs, labels)
             _, predictions = torch.max(outputs, 1)
         

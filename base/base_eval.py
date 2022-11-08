@@ -26,8 +26,25 @@ class BaseEvaluator:
         with torch.no_grad():
             outputs = self.model_ft(x)
         
-        return x, (y, outputs)
+        return (y, outputs)
     
+    
+    def calc_dataloader(self, dataloader: DataLoader):
+        targets_list = []
+        preds_list = []
+        
+        for data in dataloader:
+            (targets, preds) = self.forward(data)
+            
+            if targets.shape:
+                targets_list.extend(targets)
+                preds_list.extend(preds)
+                
+        cls_lists = [torch.stack(targets_list).cpu().squeeze(),
+                     torch.stack(preds_list).cpu().squeeze()]
+        
+        return cls_lists
+
     
     def test(self, random: bool=False, all: bool=False):
         is_random = ["test", "randomtest"][int(random)]
@@ -36,21 +53,6 @@ class BaseEvaluator:
             data = next(iter(self.testloaders[is_random]))
             return self.forward(data)
         else:
-            inputs_list = []
-            targets_list = []
-            preds_list = []
-            
-            for data in self.testloaders["test"]:
-                inputs, (targets, preds) = self.forward(data)
-                
-                if targets.shape:
-                    targets_list.extend(targets)
-                    preds_list.extend(preds)
-                
-                inputs_list.extend(inputs)
-            
-            return torch.stack(inputs_list).cpu(), (torch.stack(targets_list).cpu(),
-                                                    torch.stack(preds_list).cpu())
-
+           return self.calc_dataloader(self.testloaders["test"])
     
         
