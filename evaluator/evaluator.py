@@ -33,7 +33,7 @@ class ImageClassifier_Evaluator(BaseEvaluator):
         x, y = x.to(self.device), y.to(self.device)
         
         with torch.no_grad():
-            outputs, *_ = self.model_ft(x)
+            outputs = self.model_ft(x)
             _, preds = torch.max(outputs, 1)
             
         return (y, preds)
