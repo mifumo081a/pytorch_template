@@ -143,6 +143,7 @@ class ImageClassifier_Evaluator(BaseEvaluator):
                  alpha:float=0.5, cm:str="bwr_r")->plt.Figure:
         labels = self.testloaders["test"].dataset.labels
         imgs, targets = data
+        imgs = imgs.to(self.device)
         
         with torch.no_grad():
             outputs = self.model_ft(imgs)
