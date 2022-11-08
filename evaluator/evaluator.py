@@ -161,7 +161,7 @@ class ImageClassifier_Evaluator(BaseEvaluator):
         cam = self.model_ft.get_cam(imgs)
         cam = upsample(cam)
         cam = cam.detach().squeeze().cpu().numpy()
-        ccam = toColorImg(cam[top_catid[0]], cm=cm)
+        ccam = toColorImg(cam, cm=cm)
         
         if imgs.shape[1] != 3:
             imgs = imgs.repeat(1, 3, 1, 1)
