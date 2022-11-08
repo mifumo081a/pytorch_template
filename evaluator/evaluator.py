@@ -140,7 +140,7 @@ class ImageClassifier_Evaluator(BaseEvaluator):
     
     
     def plot_cam(self, data: Tuple[torch.Tensor, ...],
-                 alpha:float=0.5, cm:str="bwr_r")->plt.Figure:
+                 alpha:float=0.5, cm:str="bwr")->plt.Figure:
         labels = self.testloaders["test"].dataset.labels
         imgs, targets = data
         imgs = imgs.to(self.device)
@@ -165,13 +165,13 @@ class ImageClassifier_Evaluator(BaseEvaluator):
         
         if imgs.shape[1] != 3:
             imgs = imgs.repeat(1, 3, 1, 1)
-        imgs = imgs.detach().squeeze().cpu().permute(1, 2, 0).numpy()
+        in_img = imgs.detach().squeeze().cpu().permute(1, 2, 0).numpy()
         
-        cam_image = imgs * alpha + ccam * (1-alpha)
+        cam_image = in_img * alpha + ccam * (1-alpha)
         
-        fig, ax = plt.subplots(1, 2, figsize=(10, 5), tight_layout=True)
+        fig, ax = plt.subplots(1, 2, figsize=(10, 4), tight_layout=True)
         fig.suptitle(f"Target: {labels[targets.item()]}, Prediction: {labels[top_catid[0]]}")        
-        ax[0].imshow(imgs[0], vmin=0, vmax=1)
+        ax[0].imshow(in_img, vmin=0, vmax=1)
         ax[0].axis("off")
         ax[1].imshow(cam_image, vmin=0, vmax=1)
         ax[1].axis("off")
@@ -180,7 +180,7 @@ class ImageClassifier_Evaluator(BaseEvaluator):
 
             
     def show_cam(self, folder_name:str="", fname="cam", random=True, save=False,
-                 alpha:float=0.5, cm: float="bwr_r"):
+                 alpha:float=0.5, cm: float="bwr"):
         if len(folder_name):
             save_root = os.path.join(self.logs_root, folder_name)
             os.makedirs(save_root, exist_ok=True)
@@ -192,6 +192,8 @@ class ImageClassifier_Evaluator(BaseEvaluator):
         
         data = next(iter(self.testloaders[is_random]))
         f = self.plot_cam(data, alpha, cm)
+        
+        plt.subplots_adjust(left=0, right=1, bottom=0, top=1)
         if save:
             plt.savefig(os.path.join(save_root, fname+".png"), bbox_inches="tight", pad_inches=0.5)
             plt.savefig(os.path.join(save_root, fname+".pdf"), bbox_inches="tight", pad_inches=0.5)
