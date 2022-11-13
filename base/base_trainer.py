@@ -85,7 +85,7 @@ class BaseTrainer:
         
         # r2
         targets = torch.stack(targets).cpu()
-        preds = preds.stack(preds).cpu()
+        preds = torch.stack(preds).cpu()
         epoch_acc = r2_score(targets, preds)
 
         return epoch_loss, {"R2": epoch_acc}
