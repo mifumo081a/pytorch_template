@@ -8,20 +8,20 @@ import seaborn as sns
 from typing import Dict, Callable, Tuple
 from matplotlib.colors import TwoSlopeNorm as tsn
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
-from ..base import BaseEvaluator
+from ..base import BaseValidator
 from ..utils import toColorImg
 
 
-class ImageClassifier_Evaluator(BaseEvaluator):
+class ImageClassifier_Validator(BaseValidator):
     def __init__(self, model: nn.Module,
+                 val_dataloader: DataLoader,
                  device= torch.device("cpu"),
-                 dataloaders: Dict[str, Callable[[], DataLoader]] = {},
-                 testloaders: Dict[str, Callable[[], DataLoader]] = {},
                  logs_root: str = os.getcwd(),
                 ):
         super().__init__(model=model,
-                         device=device, dataloaders=dataloaders,
-                         testloaders=testloaders, logs_root=logs_root)
+                         val_dataloader=val_dataloader,
+                         device=device, 
+                         logs_root=logs_root)
         self.acc = 0.
         self.f_scores = {}
         self.precisions = {}
@@ -202,16 +202,16 @@ class ImageClassifier_Evaluator(BaseEvaluator):
         plt.close()       
 
         
-class ABN_Evaluator(ImageClassifier_Evaluator):
+class ABN_Validator(ImageClassifier_Validator):
     def __init__(self, model: nn.Module,
                  device= torch.device("cpu"),
-                 dataloaders: Dict[str, Callable[[], DataLoader]] = {},
                  testloaders: Dict[str, Callable[[], DataLoader]] = {},
                  logs_root: str = os.getcwd(),
                 ):
         super().__init__(model=model,
-                         device=device, dataloaders=dataloaders,
-                         testloaders=testloaders, logs_root=logs_root)
+                         device=device,
+                         testloaders=testloaders,
+                         logs_root=logs_root)
     
     def forward(self, data):
         x, y = data
@@ -331,16 +331,16 @@ class ABN_Evaluator(ImageClassifier_Evaluator):
         plt.close()
         
         
-class LSUnet_Evaluator(BaseEvaluator):
+class LSUnet_Validator(BaseValidator):
     def __init__(self, model: nn.Module,
                  device= torch.device("cpu"),
-                 dataloaders: Dict[str, Callable[[], DataLoader]] = {},
                  testloaders: Dict[str, Callable[[], DataLoader]] = {},
                  logs_root: str = os.getcwd(),
                 ):
         super().__init__(model=model,
-                         device=device, dataloaders=dataloaders,
-                         testloaders=testloaders, logs_root=logs_root)
+                         device=device,
+                         testloaders=testloaders,
+                         logs_root=logs_root)
         
         
     def show_lowrank_sparse(self, folder_name:str="", fname="lowrank_sparse", random=True, save=False):

@@ -5,17 +5,15 @@ from torch.utils.data import DataLoader
 import torch.nn as nn
 
 
-class BaseEvaluator:
+class BaseValidator:
     def __init__(self, model: nn.Module,
-                 dataloaders: Callable[[], DataLoader],
-                 testloaders: Callable[[], DataLoader],
+                 val_dataloader: DataLoader,
                  device= torch.device("cpu"),
                  logs_root: str = os.getcwd(),
                  ):
         self.model_ft = model.to(device).eval()# get_model(model_name, model_root, device).eval()
         self.device = device
-        self.dataloaders = dataloaders # get_dataloaders(dataloader_path)
-        self.testloaders = testloaders # get_testloaders(testloader_path)
+        self.val_dataloader = val_dataloader # get_testloaders(testloader_path)
         self.logs_root = logs_root
 
     
@@ -29,7 +27,7 @@ class BaseEvaluator:
         return (y, outputs)
     
     
-    def calc_dataloader(self, dataloader: DataLoader):
+    def val_loop(self, dataloader: DataLoader):
         targets_list = []
         preds_list = []
         
@@ -40,19 +38,17 @@ class BaseEvaluator:
                 targets_list.extend(targets)
                 preds_list.extend(preds)
                 
-        cls_lists = [torch.stack(targets_list).cpu().squeeze(),
+        out_lists = [torch.stack(targets_list).cpu().squeeze(),
                      torch.stack(preds_list).cpu().squeeze()]
         
-        return cls_lists
+        return out_lists
 
     
-    def test(self, random: bool=False, all: bool=False):
-        is_random = ["test", "randomtest"][int(random)]
-
+    def test(self, all: bool=False):
         if not all:
-            data = next(iter(self.testloaders[is_random]))
+            data = next(iter(self.val_dataloader))
             return self.forward(data)
         else:
-           return self.calc_dataloader(self.testloaders["test"])
+           return self.val_loop(self.val_dataloader)
     
         

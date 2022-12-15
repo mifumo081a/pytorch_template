@@ -14,9 +14,10 @@ def kfold_train(save_model_root: str, trainer_list: List[BaseTrainer], n_splits=
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
         
-        print("Pattern: ", k)
+        print("Fold: ", k)
         trainer.train_loop()
 
         path = os.path.join(save_model_root, str(k)+"/")
         os.makedirs(path, exist_ok=True)
         trainer.save(path)
+        

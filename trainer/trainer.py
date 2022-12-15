@@ -11,11 +11,11 @@ from sklearn.metrics import accuracy_score
 class Trainer_Classifier(BaseTrainer):
     def __init__(self, model: nn.Module, device: torch.device("cpu"),
                  dataloaders: Dict[str, Callable[[], DataLoader]] = {},
-                 optim_init: Callable[[], Optimizer]=Adam,
-                 lr=1e-3, epochs=10):
+                 optimizer: Optimizer=None,
+                 epochs=10):
         super().__init__(model=model, device=device,
                          dataloaders=dataloaders,
-                         optim_init=optim_init, lr=lr, epochs=epochs)
+                         optimizer=optimizer, epochs=epochs)
         self.criterion = nn.CrossEntropyLoss()
         
 
@@ -24,7 +24,7 @@ class Trainer_Classifier(BaseTrainer):
         x, labels = data
         x, labels = x.to(self.device), labels.to(self.device)
 
-        if self.model_ft.training:
+        if self.model_ft.training and self.phase == "train":
           self.optimizer.zero_grad()
           outputs = self.model_ft(x)
           loss = loss_func(outputs, labels)

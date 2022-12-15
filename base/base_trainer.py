@@ -9,7 +9,7 @@ from typing import Dict, Tuple, Union, Optional, OrderedDict, Callable
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import r2_score
-from ..utils import get_optimizer
+from ..utils import reset_weight
 from ..pickle_io import save_as_pickle
 
 
@@ -17,19 +17,22 @@ class BaseTrainer:
     def __init__(self, model: nn.Module, 
                  device= torch.device("cpu"),
                  dataloaders: Dict[str, Callable[[], DataLoader]] = {},
-                 optim_init: Callable[[], Optimizer]=SGD,
-                 lr=1e-3, epochs=10):
-        self.model_init = model # get_model("nontrain", model_root, device)
-        self.model_ft = copy.deepcopy(self.model_init).to(device)
+                 optimizer: Optimizer=None,
+                 epochs=10,
+                 early_stopping=True):
+        self.model_ft = reset_weight(copy.deepcopy(model)).to(device)
         self.phase = "train"
         self.device = device
         self.dataloaders = dataloaders # get_dataloaders(dataloader_path)
-        self.optimizer = get_optimizer(optim_init, self.model_ft, lr)
+        if optimizer is not None:
+            self.optimizer = optimizer
+        else:
+            self.optimizer = SGD(model.parameters(), lr=1e-3)
         self.epochs = epochs
         self.best_loss = np.inf
         self.loss_list_dict = {"train": [], "val": []}
         self.acc_list_dict = {} # ex. {"Acc": {"train": [], "val": []}, "R2": {...}}
-
+        self.early_stopping = early_stopping    
 
     def step_func(self, data: Union[torch.Tensor, Tuple[torch.Tensor, ...]]) -> Union[float, Tuple[float, ...]]:
         """
@@ -42,7 +45,7 @@ class BaseTrainer:
         loss_func = nn.MSELoss()
         x, y = data
         x, y = x.to(self.device), y.to(self.device)
-        if self.model_ft.training:
+        if self.model_ft.training and self.phase == "train":
             self.optimizer.zero_grad()
             outputs = self.model_ft(x)
             loss = loss_func(outputs.to(torch.float), y.to(torch.float))
@@ -124,9 +127,10 @@ class BaseTrainer:
                         postfix
                     )
 
-                    if phase == "val" and epoch_loss <= self.best_loss:
-                        self.best_loss = epoch_loss
-                        best_model_wts = copy.deepcopy(self.model_ft.state_dict())
+                    if self.early_stopping:
+                        if phase == "val" and epoch_loss <= self.best_loss:
+                            self.best_loss = epoch_loss
+                            best_model_wts = copy.deepcopy(self.model_ft.state_dict())
 
         print("Best val Loss: {:.4f}".format(self.best_loss))
         best_idx = self.loss_list_dict["val"].index(self.best_loss)
